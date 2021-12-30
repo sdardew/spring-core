@@ -264,3 +264,45 @@ for (String key : beansOfType.keySet()) {
 - InitMethodName: 빈을 생성하고, 의존관계를 적용한 뒤에 호출되는 초기화 메서드 명
 - DestroyMethodName: 빈의 생명주기가 끝나서 제거하기 직전에 호출되는 메서드 명
 - Constructor arguments, Properties: 의존관계 주입에서 사용한다. (자바 설정 처럼 팩토리 역할의 빈을 사용하면 없음)
+
+<br /><br />
+
+# 4 싱글톤 컨테이너
+
+## 4.1 싱글톤 패턴
+- 클래스의 인스턴스가 1개만 생성되는 디자인 패턴
+- 객체가 1개만 생성되고 공유
+- private 생성자를 사용하여 외부에서 new 키워드를 사용하지 못하도록 막음
+- 메모리 낭비를 방지
+
+``` java
+public class SingletonService {
+    
+    // 인스턴스 생성
+    private static final SingletonService instance = new SingletonService();
+
+    public static SingletonService getInstance() {
+        return instance;
+    }
+    
+    // private 생성자
+    private SingletonService() {
+    }
+}
+```
+- getInstance() 메서드를 사용하여 객체를 사용할 수 있음
+
+### 4.1.1 싱글톤 패턴의 문제점
+- 코드가 길어짐
+- DIP & OCP 위반: 클라이언트가 구체 클래스에 의존
+- 테스트가 어려움
+- 내부 속성 변경 및 초기화가 어려움
+- private 생성자 => 상속 불가능
+- 유연성이 떨어짐
+- 안티패턴
+
+## 4.2 싱글톤 컨테이너
+- 스프링 컨테이너는 객체 인스턴스를 싱글톤으로 관리
+- 
+- 스프링 빈은 싱글톤으로 관리되는 빈
+
