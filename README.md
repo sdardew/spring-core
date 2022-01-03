@@ -323,6 +323,88 @@ public class SingletonService {
 - @Configuration 없이 @Bean만 사용하면 스프링 빈으로 등록 되지만 싱글톤을 보장하지 않음
 
 
+# 5 컴포넌트 스캔
+## 5.1 컴포넌트 스캔과 의존관계 자동 주업
+- 스프링은 설정 정보가 없어도 자동으로 스프링 빈을 등록하는 컴포넌트 스캔 기능 제공
+- `@Autowired`를 통한 의존관계 자동 주입 기능 제공
 
+### 5.1.1 `@ConponentScan`
+- `@ConponentScan`을 설정 정보에 추가하여 사용
+- `@Component` 어노테이션이 붙은 클래스를 스캔하여 스프링빈으로 등록
 
+### 5.1.2 컴포넌트 스캔과 자동 주입 방식
+1. `@ComponentScan`
+- `@ComponentScan`은 `@Component`가 붙은 클래스를 스프링 빈으로 등록
+- 스프링 빈의 등록 이름
+  - 클래스명에서 맨 앞글자만 소문자로 변경하여 이름으로 사용: SpringBean -> springBean
+  - @Component("원하는이름")으로 빈의 이름을 지정할 수도 있음
+
+2. `@Autowired` - 의존 관계 자동 주입
+- `@Autowired`가 붙은 대상에 스프링 컨테이너가 자동으로 해당 스프링 빈을 찾아서 주입
+- 타입이 같은 빈을 찾아서 주입
+
+## 5.2 컴포넌트 스캔의 대상
+### 5.2.1 컴포넌트 스캔 대상 패키지
+- `@ComponentScan`이 붙은 클래스가 위치한 패키지가 기본 시작 위치
+- `basePackage`로 탐색할 패키지의 시작 위치 지정 가능
+  - 경로가 한 개: `@ComponentScan(basePackages="base.pkg")`
+  - 경로가 여러 개: `@ComponentScan(basePackages={"base.pkg1", "base,pkg2"})` 방식으로 시작 위치 지정 가능
+
+### 5.2.2 컴포넌트 스캔 대상 클래스
+- `@Component`: 컴포넌트 스캔에 사용
+- `@Contoroller`: 스프링 MVC 컨트롤러에서 사용
+- `@Service`: 스프링 비즈니스 로직에서 사용
+- `@Repository`: 스프링 데이터 접근 계층에서 사용
+- `@Configuration`: 스프링 설정 정보에서 사용
+
+![image](https://user-images.githubusercontent.com/86591021/147912173-7383c71d-5438-4a07-9888-81b85ee59586.png)
+- 위의 이미지를 보면 `@Component`, `@Repository`, `@Service`, `@Controller`라고 어노테이션이 붙어 있는 클래스들이 대상되어 있음
+- 위의 기능을 false로 하면 기본 스캔 대상에서 제외
+![image](https://user-images.githubusercontent.com/86591021/147912409-e520baa0-14f0-4274-b2a9-91ef7d0452e6.png)
+- `@Configuration`은 `@Component` 어노테이션이 붙어 있음
+
+## 5.3 컴포넌트 스캔 필터
+- `includeFilters`: 컴포넌트 스캔 대상을 추가로 지정
+- `excludeFilters`: 컴포넌트 스캔에서 제외할 대상을 지정
+
+### 5.3.1 Annotation을 사용한 스캔 대상 지정
+1. 스캔 대상인지 아닌지 표현할 어노테이션 생성
+``` java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface MyIncludeComponent {
+}
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface MyExcludeComponent {
+}
+```
+2. 생성한 어노테이션을 클래스 위에 붙임
+3. `@ComponentScan`에 추가하여 표헌
+``` java
+@ComponentScan(
+  includeFilters = @Filter(type = FilterType.ANNOTATION, classes = MyIncludeComponent.class),
+  excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = MyExcludeComponent.class)
+)
+```
+
+### 5.3.2 FilterType 옵션
+- ANNOTATION: 기본 값. 어노테이션으로 판단.
+- ASSIGNABLE_TYPE: 지정한 타입과 자식 타입
+- ASPECTJ: AspectJ 패턴
+- REGEX: 정규표현식
+- CUSTOM: `TypeFilter` 인터페이스 구현하여 사용
+
+## 5.4 중복과 충돌
+### 5.4.1 자동 빈 등록 VS 자동 빈 등록
+- 컴포넌트 스캔에의해 자동으로 빈을 등록할 때 스프링 빈의 이름이 같다면 `ConflictingBeanDefinitionException` 예외 발생
+
+### 5.4.2 수동 빈 등록 VS 자동 빈 등록
+- 수동 빈 등록이 우선권
+- 수동 빈이 자동 빈을 오버라이딩
+- 스프링 부트에서는 수동 빈 등록과 자동 빈 등록 충돌에서는 오류가 자동으로 발생하는 것이 기본 값
+  - properties에 `spring.main.allow-bean-definition-overriding=true`을 추가하면 오버라이딩이 됨
 
