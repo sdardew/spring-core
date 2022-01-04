@@ -536,8 +536,57 @@ public ParentClass setParentClass(@MainBean ParentClass parentClass) {
 ## 6.6 여러개 빈을 조회 - List, Map
 - `Map<String, ParentClass>`: 키로 스프링 빈의 이름으로 빈을 조회할 수 있음
 
-> 스프링 컨테이너 생성자는 파라미터로 클래스 정보를 받는다. 받은 클래스 정보의 해당 클래스가 스프링 빈으로 자동 등록된다.
+> 스프링 컨테이너 생성자는 파라미터로 클래스 정보를 받는다. 받은 클래스 정보의 해당 클래스가 스프링 빈으로 자동 등록된다.  
 > `new AnnotationConfigApplicationContext(AutoAppConfig.class,DiscountService.class)`: AutoAppConfig class와 DiscountService 클래스 등록
 
 <br /><br />
 
+# 7 빈 생명주기 콜백
+
+## 7.1 스프링 빈 라이브 사이클
+1. 스프링 컨테이너 생성
+2. 스프링 빈 생성
+3. 의존 관계 주입
+4. 초기화 콜백
+5. 사용
+6. 소멸 콜백
+7. 스프링 종료
+
+- 스프링 빈은 **객체 생성된 다음 의존 관계 주입**
+- 스프링은 의존 관계 주입이 완료되면 스프링 빈에게 콜백 메서드를 통해서 초기화 시점을 알려줌
+- 스프링 컨테이너가 종료되기 직전에 소멸 콜백을 줌
+
+### 스프링 빈이 지원하는 빈 생명주기 콜백 방식
+- 인터페이스(InitializingBean, DisposableBean)
+- 설정 정보에 초기화 메서드, 종료 메서드 지정
+- `@PostConstruct`, `@PreDestroy` 어노테이션
+
+## 7.2 인터페이스(InitializingBean, DisposableBean)
+- InitializingBean은 `afterPropertiesSet()` 메서드로 초기화 지원
+- DisposableBean은 `destroy()` 메서드로 소멸 지원
+
+### 인터페이스 InitializingBean, DisposableBean 단점
+- 스프링 전용이라 스프링에 의존
+- 초기화, 소멸 메서드 이름 변경 불가능
+- 외부 라이브러리에 적용 불가
+
+## 7.3 빈 등록 초기화 ,소멸 메서드 지정
+- `@Configuration` 클래스에 `@Bean(initMethod = "method명1", destroyMethod = "method명2")`를 통하여 초기화 소멸 메서드 지정
+- 메서드 이름을 자유롭게 줄 수 있음
+- 빈이 코드에 의존하지 않음
+- 외부 라이브러리에도 초기화, 종료 메서드 적용 가능
+
+### 소멸 메서드 inferred
+- 라이브러리는 `close`, `shutdown` 이름의 소멸 메서드 사용
+- `@Bean`의 `destroyMethod`는 기본값이 `inferred`
+- 추론 기능을 통해서 `close`, `shutdown` 메서드 자동 호출 -> 빈으로 등록하면 destroyMethod 없이 소멸 메서드 자동으로 호출 해줌
+- `destoryMethod=""`으로 추론 기능 사용하지 않을 수 있음
+
+## 7.4 @PostConstruct, @PreDestroy
+- 스프링에서 권장하는 방법
+- 스프링이 아닌 다른 컨테이너에서도 동작
+- 외부 라이브러리에는 적용 불가
+
+## 7.5 정리
+- `@PostConstruct`, `@PreDestroy` annotation 사용
+- 외부 라이브러리는 `@Bean`의 `initMethod`, `destoryMethod` 사용
