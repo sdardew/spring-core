@@ -590,3 +590,75 @@ public ParentClass setParentClass(@MainBean ParentClass parentClass) {
 ## 7.5 정리
 - `@PostConstruct`, `@PreDestroy` annotation 사용
 - 외부 라이브러리는 `@Bean`의 `initMethod`, `destoryMethod` 사용
+
+<br /><br />
+
+# 8 빈 스코프
+- 스프링 빈은 기본적으로 싱글톤 스코프로 생성됨
+- 스프링 빈은 컨테이너 시작에 생성되어 종료될 때까지 유지
+> 스코프: 빈이 존재할 수 있는 범위
+
+## 8.1 스프링이 지원하는 스코프
+- 싱글톤
+  - 기본 스코프
+  - 컨테이너 시작부터 종료까지 유지
+- 프로토타입
+  - 빈의 생성과 의존 관계 주입까지만 스프링 컨테이너가 관리
+- 웹 관련 스코프
+  - request: 웹 요청이 들어오고 나갈 때까지 유지되는 스코프
+  - session: 웹 세션이 생성되고 종료될 때까지 유지되는 스코프
+  - application: 웹의 서블릿 컨텍스트와 같은 범위로 유지되는 스코프
+
+## 8.2 빈 스코프 지정 방법
+- `@Bean` 혹은 `@Component`와 함께 `@Scope("prototype")`과 같은 바식으로 지정
+
+## 8.3 프로토타입 스코프
+- 스프링 컨테이너가 항상 새로 생성해서 반환하는 빈
+- 스프링 빈 요청 시점에 프로토타입 빈을 생성하고 의존관계를 주입
+- 스프링 컨테이너는 빈 생성, 의존 관계 주입, 초기화까지만 처리
+- 종료 메서드가 호출되지 않음
+- 빈이 반환되면 스프링 컨테이너는 빈을 관리하지 않음
+
+### 프로토타입 + 싱글톤 문제
+> 싱글톤이 프로토타입 빈을 사용할 때, 프로토타입 빈은 한 번만 생성되어 싱글톤 빈에 주입되어 프로토타입 빈이 싱글톤 빈처럼 동작하는 문제가 발생
+
+## 8.4 프로토타입 + 싱글톤 문제 해결
+- DL(Dependency Lookup)
+- ObjectFactory, ObjectProvider
+- JSR-330 Provider
+
+### DL(Dependency Lookup)
+- 사용할 때마다 getBean을 사용하여 직접 빈을 조회
+- 스프링 컨테이너에 종속적이게 되어 단위 테스트가 어려워짐
+
+### ObjectFactory, ObjectProvider
+- DL 서비스를 제공
+- 의존 관계가 있는 빈(PrototypeBean)에 대해서 `ObjectProvider<PrototypeBean> prototypeBeanProvider;` 방식으로 사용
+- `prototypeBeanProvider.getObject()`로 빈을 조회
+
+### JSR-330 Provider
+- 자바 표준 -> 스프링이 아닌 다른 컨테이너에도 사용 가능
+- gradle에 라이브러리를 추가
+- ` Provider<PrototypeBean> provider;` 방식으로 사용
+- `provider.get()`을 통해서 빈을 조회
+
+## 8.5 웹 스코프
+- 웹 환경에서만 동작
+- 스프링이 종료 시점까지 관리하는 빈
+
+### 웹 스코프 종류
+- request: 요청이 들어오고 나갈 때까지 유지되는 스코프
+- session: HTTP Session과 동일한 생명주기를 가지는 스코프
+- application: 서블릿 컨텍스트(Servlet Context)와 동일한 생명 주기를 가지는 스코프
+- websocket: 웹 소켓과 동일한 생명주기를 가지는 스코프
+
+### 웹 스코프 라이브러리 추가
+build.gradle에 라이브러리 추가
+``` grale
+implementation 'org.springframework.boot:spring-boot-starter-web'
+```
+
+### 사용 방법
+``` java
+@Scope(value="request")
+```
