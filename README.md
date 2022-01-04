@@ -322,6 +322,7 @@ public class SingletonService {
 - 빈이 없다면 생성하여 스프링 빈을 등록하고 반환
 - @Configuration 없이 @Bean만 사용하면 스프링 빈으로 등록 되지만 싱글톤을 보장하지 않음
 
+<br /><br />
 
 # 5 컴포넌트 스캔
 ## 5.1 컴포넌트 스캔과 의존관계 자동 주업
@@ -407,4 +408,136 @@ public @interface MyExcludeComponent {
 - 수동 빈이 자동 빈을 오버라이딩
 - 스프링 부트에서는 수동 빈 등록과 자동 빈 등록 충돌에서는 오류가 자동으로 발생하는 것이 기본 값
   - properties에 `spring.main.allow-bean-definition-overriding=true`을 추가하면 오버라이딩이 됨
+
+<br /><br />
+
+# 6 의존 관계 
+
+## 6.1 의존 관계 주입 방법
+- 생성자 주입
+- setter 주입
+- 필드 주입
+- 일반 메서드 주입
+
+
+### 6.1.1 생성자 주입
+- 생성자를 통해서 의존 관계를 주입
+- 생성자 호출 시점에 1번만 호출
+- **불변, 필수** 의존 관계에 사용
+- **생성자가 1개** 있으면 `@Autowired`을 생략 해도 **자동으로 주입** 됨
+
+### 6.1.2 setter 주입
+- setter 메서드를 통해서 주입
+- **선택, 변경** 가능성이 있는 의존 관계에 사용
+
+### 6.1.3 필드 주입
+- 필드에 바로 주입
+- 코드가 간결
+- 외부에서 변경이 불가능하여 테스트하기 어려움
+- DI 프레임 워크가 없으면 아무것도 할 수 없음
+
+> `@Autowired`를 통한 자동 주입은 스프링 컨테이너가 관리하는 스프링 빈에만 해당
+
+## 6.2 옵션 처리
+- `@Autowired`만 사용하면 `required` 옵션의 기본값이 true로 되어 있어 자동 주입 대상이 없으면 오류 발생
+- 주입할 스프링 빈이 없을 때는 다른 옵션을 주어서 처리
+
+### 6.2.1 자동 주입 대상을 옵션으로 처리
+- `@Autowired(required = false)`: 자동 주업할 대상이 없을 때 호출이 안 됨.
+- `@Nuallable`: 파라미터 앞에 삽입. 자동 주입할 대상이 없을 때 `null` 입력.
+- `Optional<>`: 자동 주입할 대상이 없을 때 `Optional.empty` 입력.
+
+> `@Autowired(required = false)`는 대상이 없다면 호출이 되지 않지만 나머지는 대상이 없어도 호출된다. 대신 다른 값을 입력한다.
+
+## 6.3 생성자 주입 권장
+- 대부분의 의존 관계는 애플리케이션 종료 전가지 변하면 안 됨
+- 수정자 주입은 setter 메서드를 public으로 열어야 함 -> 변경하면 안 되는 메서드를 열어두는 것은 좋은 설계가 아님
+- 생성자 주입은 객체 생성시 1번만 호출되어 불변
+
+### 6.3.1 생성자 주입과 final
+- 생성자 주입을 사용하면 필드에 `final` 키워드 사용 가능
+- 값이 설정되지 않는 에러를 방지
+- 기본으로 생성자 주입을 사용하고, 필수 값이 아닌 경우에는 setter 주입을 사용하여 부여 하면 됨
+
+> 생성자 주입을 제외한 나머지 주입 방식은 생성자 이후에 호출되어, final 키워드를 사용할 수 없음
+
+## 6.3.2 롬복
+- 생성자가 1개만 있으면 `@Autowired`생략 가능
+- `@RequiredArgsConstructor`은 final이 붙은 필드에 대해서 생성자를 만듦
+
+## 6.4 조회된 빈이 2개 이상
+- `@Autowired`는 타입으로 빈을 조회
+- 상위 타입에 해당하는 하위 타입의 빈이 2개 이상일 때 문제가 발생
+- 하위 타입으로 지정을 하면 DIP를 위배
+
+### 6.4.1 조회된 빈이 2개 이상일 때 해결 방법
+- @Autowired + 필드명
+- @Qualifier
+- @Primary
+
+#### @Autowired + 필드명
+1. 타입 매칭을 시도
+2. 매칭 결과가 2개 이상이면 필드 이름, 파라미터 이름으로 매칭
+``` java
+private People people;
+```
+``` java
+private People student;
+```
+
+#### @Qualifer
+- 추가 구분자를 붙여주는 방법
+1. 빈 등록시 `@Qualifier`와 이름을 지정
+2. 주입시 파라미터 앞에 `@Qualifier`와 이름 지정
+3. 매칭되는 `@Qualifier`이 없으면 빈 이름으로 매칭
+4. 2와 3에서 찾을 수 없다면 `NoSuchBeanDefinitionException` 발생 
+ 
+#### @Primary
+- 우선순위를 정하는 방법
+- `@Primary`가 붙은 빈이 우선권을 가짐
+- 
+> `@Primay`와 `@Qulifier`이 있다면 `@Qualifier`이 더 높은 우선순위를 가진다. 넓은 범위의 선택권 보다는 좁은 범위의 선택권이 우선 순위가 높다.
+
+## 6.5 어노테이션 만들기
+- `@Qualifier`은 오타가 발생했을 때 컴파일 시 체크가 안 됨
+- 어노테이션을 만들어 `@Qualifier`을 상속받아 해결 가능
+
+1. Annotation 생성
+``` java
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER,ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Qualifier("mainBean")
+public @interface MainBean {
+}
+```
+
+2. Annotation을 @Qualifier 자리에 추가
+``` java
+@Component
+@MainDiscountPolicy
+public class ChildClass implements ParentClass {}
+```
+
+```
+//생성자 자동 주입
+@Autowired
+public DIClass(@MainBean ParentClass parentClass) {
+  this.parentClass = parentClass;
+}
+
+//수정자 자동 주입
+@Autowired
+public ParentClass setParentClass(@MainBean ParentClass parentClass) {
+  return parentClass;
+}
+```
+
+## 6.6 여러개 빈을 조회 - List, Map
+- `Map<String, ParentClass>`: 키로 스프링 빈의 이름으로 빈을 조회할 수 있음
+
+> 스프링 컨테이너 생성자는 파라미터로 클래스 정보를 받는다. 받은 클래스 정보의 해당 클래스가 스프링 빈으로 자동 등록된다.
+> `new AnnotationConfigApplicationContext(AutoAppConfig.class,DiscountService.class)`: AutoAppConfig class와 DiscountService 클래스 등록
+
+<br /><br />
 
